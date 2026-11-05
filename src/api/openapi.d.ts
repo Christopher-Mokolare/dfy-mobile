@@ -3377,6 +3377,43 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/config/task-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["TaskBudgetLimitsDtoApiResponse"];
+                        "application/json": components["schemas"]["TaskBudgetLimitsDtoApiResponse"];
+                        "text/json": components["schemas"]["TaskBudgetLimitsDtoApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tasks": {
         parameters: {
             query?: never;
@@ -5338,6 +5375,19 @@ export interface components {
             /** Format: int32 */
             ratingValue: number;
             review?: string | null;
+        };
+        TaskBudgetLimitsDto: {
+            /** Format: double */
+            minimumBudget?: number;
+            /** Format: double */
+            maximumBudget?: number;
+            currency?: string | null;
+        };
+        TaskBudgetLimitsDtoApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["TaskBudgetLimitsDto"];
+            message?: string | null;
+            error?: string | null;
         };
         TaskDto: {
             /** Format: int32 */
