@@ -38,7 +38,7 @@ jobs:
           npx --yes openapi-typescript@7.6.1 contracts/openapi.json -o /tmp/dfy-openapi.d.ts
           diff -u src/api/openapi.d.ts /tmp/dfy-openapi.d.ts
 
-      - name: Check freshness against canonical DFY-BE main
+      - name: Check freshness against canonical DFY-BE staging
         env:
           DFY_BE_READ_TOKEN: ${{ secrets.DFY_BE_READ_TOKEN }}
         run: |
@@ -46,8 +46,9 @@ jobs:
             echo "::error::DFY_BE_READ_TOKEN is required to verify this client against the canonical DFY-BE contract. Configure a read-only Contents token in repository Actions secrets."
             exit 1
           fi
-          CANONICAL_REF="${GITHUB_BASE_REF:-${GITHUB_REF_NAME}}"
-          if [ "$CANONICAL_REF" != "staging" ]; then CANONICAL_REF="main"; fi
+          # This PR and the active DFY client contract target staging.
+          # Use the staging API snapshot even when a branch-push event has no GITHUB_BASE_REF.
+          CANONICAL_REF="staging"
           curl --fail --silent --show-error -H "Authorization: Bearer $DFY_BE_READ_TOKEN" -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/DoForYou-ZA/DFY-BE/contents/docs/openapi.json?ref=$CANONICAL_REF" -o /tmp/dfy-canonical-openapi.json
           diff -u contracts/openapi.json /tmp/dfy-canonical-openapi.json
 
