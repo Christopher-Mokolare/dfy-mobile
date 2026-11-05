@@ -4,7 +4,7 @@ import {
   TouchableOpacity, Alert, Switch
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
-import { tasksApi, categoryApi, userPreferencesApi } from '../../api'
+import { tasksApi, categoryApi, taskConfigurationApi } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button'
 import { AlertBanner } from '../../components/Common'
@@ -130,8 +130,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
   const [pendingScrollField, setPendingScrollField] = useState('')
   const scrollRef = useRef<ScrollView>(null)
   const fieldPositions = useRef<Record<string, number>>({})
-  const [minAmount, setMinAmount] = useState(50)
-  const [maxAmount, setMaxAmount] = useState(5000)
+  const [budgetLimits, setBudgetLimits] = useState<{ minimumBudget: number; maximumBudget: number; currency: string } | null>(null)
   const [form, setForm] = useState({
     taskName: '', taskDescription: '', category: '', customCategory: '', area: '',
     priority: 'standard', dateNeeded: '', budget: '', notes: '',
@@ -143,11 +142,13 @@ export default function PostErrandScreen({ navigation, route }: any) {
       navigation.navigate('Dashboard')
       return
     }
-    userPreferencesApi.get().then(r => {
-      const d = r.data?.data || r.data
-      if (d?.minTaskAmount != null) setMinAmount(Number(d.minTaskAmount))
-      if (d?.maxTaskAmount != null) setMaxAmount(Number(d.maxTaskAmount))
-    }).catch(() => {})
+    taskConfigurationApi.getTaskLimits().then(r => {
+      const limits = r.data?.data
+      if (!limits || !Number.isFinite(limits.minimumBudget) || !Number.isFinite(limits.maximumBudget) || limits.minimumBudget > limits.maximumBudget) {
+        throw new Error('Invalid task budget limits response.')
+      }
+      setBudgetLimits(limits)
+    }).catch(() => setError('Unable to load task budget limits. Please try again later.'))
     categoryApi.getAll().then(r => {
       const cats = r.data?.data || r.data
       if (Array.isArray(cats) && cats.length)
@@ -194,8 +195,9 @@ export default function PostErrandScreen({ navigation, route }: any) {
     else if (date.getTime() <= now.getTime() + 30 * 60 * 1000) next.dateNeeded = 'Deadline must be at least 30 minutes from now.'
     else if (date.getTime() > now.getTime() + 365 * 24 * 60 * 60 * 1000) next.dateNeeded = 'Deadline cannot be more than 365 days away.'
     if (!form.budget.trim() || !Number.isFinite(amount)) next.budget = 'Enter a valid budget amount.'
-    else if (amount < minAmount) next.budget = `Budget must be at least R${minAmount}.`
-    else if (amount > maxAmount) next.budget = `Budget cannot exceed R${maxAmount}.`
+    else if (!budgetLimits) next.budget = 'Task budget limits are unavailable. Please try again.'
+    else if (amount < budgetLimits.minimumBudget) next.budget = `Budget must be at least R${budgetLimits.minimumBudget}.`
+    else if (amount > budgetLimits.maximumBudget) next.budget = `Budget cannot exceed R${budgetLimits.maximumBudget}.`
     if (!form.termsAccepted) next.termsAccepted = 'Accept the Terms & Conditions to continue.'
     return next
   }
@@ -254,7 +256,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
       } else if (field === 'dateNeeded') {
         message = !date || Number.isNaN(date.getTime()) ? 'Choose a valid deadline.' : date.getTime() <= now.getTime() + 30 * 60 * 1000 ? 'Deadline must be at least 30 minutes from now.' : date.getTime() > now.getTime() + 365 * 24 * 60 * 60 * 1000 ? 'Deadline cannot be more than 365 days away.' : ''
       } else if (field === 'budget') {
-        message = !String(val).trim() || !Number.isFinite(amount) ? 'Enter a valid budget amount.' : amount < minAmount ? `Budget must be at least R${minAmount}.` : amount > maxAmount ? `Budget cannot exceed R${maxAmount}.` : ''
+        message = !String(val).trim() || !Number.isFinite(amount) ? 'Enter a valid budget amount.' : !budgetLimits ? 'Task budget limits are unavailable. Please try again.' : amount < budgetLimits.minimumBudget ? `Budget must be at least R${budgetLimits.minimumBudget}.` : amount > budgetLimits.maximumBudget ? `Budget cannot exceed R${budgetLimits.maximumBudget}.` : ''
       } else if (field === 'termsAccepted') {
         message = val ? '' : 'Accept the Terms & Conditions to continue.'
       }
@@ -509,7 +511,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
 
             <View onLayout={event => { fieldPositions.current.budget = event.nativeEvent.layout.y }}>
               <Text style={styles.label}>Your Budget (R) *</Text>
-              <Text style={styles.hint}>R{minAmount} minimum · R{maxAmount} maximum</Text>
+              <Text style={styles.hint}>{budgetLimits ? `R${budgetLimits.minimumBudget} minimum · R${budgetLimits.maximumBudget} maximum` : 'Loading budget limits…'}</Text>
               <View style={styles.budgetRow}>
                 <View style={styles.currencyPrefix}>
                   <Text style={styles.currencyText}>R</Text>
@@ -527,7 +529,7 @@ export default function PostErrandScreen({ navigation, route }: any) {
               {fieldHint('budget')}
             </View>
 
-            {budget >= minAmount && (
+            {budgetLimits && budget >= budgetLimits.minimumBudget && (
               <View style={styles.breakdown}>
                 <View style={styles.breakdownRow}>
                   <Text style={styles.breakdownLabel}>Task Budget:</Text>

@@ -2,6 +2,13 @@ import api from './client'
 import type { LoginModel, RegisterModel, AuthResponse } from '../types'
 import type { BackendTaskPage, BackendClaimTaskRequest, BackendBooleanResponse, BackendCreateTaskRequest, BackendUpdateTaskRequest } from './contract'
 
+export interface TaskBudgetLimits { minimumBudget: number; maximumBudget: number; currency: string }
+interface ApiResponse<T> { success?: boolean; data?: T; message?: string | null }
+
+export const taskConfigurationApi = {
+  getTaskLimits: () => api.get<ApiResponse<TaskBudgetLimits>>('/config/task-limits'),
+}
+
 export const publicApi = {
   getStats: () => api.get('/public/stats'),
 }
