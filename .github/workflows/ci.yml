@@ -26,6 +26,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify live staging task budget endpoint
+        env:
+          DFY_API_URL: https://dfy-be-staging.onrender.com/api/v1
+        run: |
+          response="$(curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 5 "$DFY_API_URL/config/task-limits")"
+          echo "$response" | jq -e '.success == true and .data.minimumBudget == 50 and .data.maximumBudget == 100000 and .data.currency == "ZAR"' >/dev/null
+
       - name: Verify generated OpenAPI declarations
         run: |
           npx --yes openapi-typescript@7.6.1 contracts/openapi.json -o /tmp/dfy-openapi.d.ts
