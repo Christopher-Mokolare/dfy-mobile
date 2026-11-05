@@ -3646,6 +3646,35 @@
         }
       }
     },
+    "/api/v1/config/task-limits": {
+      "get": {
+        "tags": [
+          "TaskConfiguration"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBudgetLimitsDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBudgetLimitsDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskBudgetLimitsDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tasks": {
       "post": {
         "tags": [
@@ -6242,6 +6271,44 @@
             "format": "int32"
           },
           "review": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskBudgetLimitsDto": {
+        "type": "object",
+        "properties": {
+          "minimumBudget": {
+            "type": "number",
+            "format": "double"
+          },
+          "maximumBudget": {
+            "type": "number",
+            "format": "double"
+          },
+          "currency": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TaskBudgetLimitsDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/TaskBudgetLimitsDto"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "error": {
             "type": "string",
             "nullable": true
           }
