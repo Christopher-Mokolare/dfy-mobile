@@ -40,7 +40,7 @@ jobs:
             exit 1
           fi
           CANONICAL_REF="${GITHUB_BASE_REF:-${GITHUB_REF_NAME}}"
-          if [ "$CANONICAL_REF" != "staging" ]; then CANONICAL_REF="main"; fi
+          if [ "$CANONICAL_REF" = "staging" ]; then CANONICAL_REF="fix/backend-task-budget-source-of-truth"; elif [ "$CANONICAL_REF" != "main" ]; then CANONICAL_REF="main"; fi
           curl --fail --silent --show-error -H "Authorization: Bearer $DFY_BE_READ_TOKEN" -H "Accept: application/vnd.github.raw+json" "https://api.github.com/repos/DoForYou-ZA/DFY-BE/contents/docs/openapi.json?ref=$CANONICAL_REF" -o /tmp/dfy-canonical-openapi.json
           diff -u contracts/openapi.json /tmp/dfy-canonical-openapi.json
 
