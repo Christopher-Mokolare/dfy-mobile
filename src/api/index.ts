@@ -13,12 +13,33 @@ export const publicApi = {
   getStats: () => api.get('/public/stats'),
 }
 
+export const identityVerificationApi = {
+  getStatus: () => api.get('/identity-verification/status'),
+  createSession: (data: { consentAccepted: boolean; consentVersion: string }) => api.post('/identity-verification/session', data),
+  exchange: (handoffCode: string) => api.post('/identity-verification/exchange', { handoffCode }),
+}
+
 export const authApi = {
   login: (data: LoginModel) => api.post<AuthResponse>('/auth/login', data),
+  googleLogin: (idToken: string, secondFactorCode?: string) => api.post<AuthResponse>('/auth/google', { idToken, secondFactorCode }),
+  googleRegister: (data: import('../types').GoogleRegisterModel) => api.post<AuthResponse>('/auth/google/register', data),
+  linkGoogleAccount: (idToken: string, stepUpToken: string) => api.post('/auth/google/link', { idToken }, { headers: { 'X-DFY-Step-Up-Token': stepUpToken } }),
+  getTwoFactorStatus: () => api.get('/auth/two-factor/status'),
+  setupTwoFactor: (data: { currentPassword?: string; googleIdToken?: string }) => api.post('/auth/two-factor/setup', data),
+  confirmTwoFactor: (code: string) => api.post('/auth/two-factor/confirm', { code }),
+  disableTwoFactor: (data: { currentPassword?: string; code: string }) => api.post('/auth/two-factor/disable', data),
+  cancelTwoFactorSetup: () => api.post('/auth/two-factor/cancel-setup', {}),
+  reauthenticate: (data: { currentPassword?: string; googleIdToken?: string; secondFactorCode?: string }) => api.post('/auth/reauthenticate', data),
+  logout: (token?: string) => api.post('/auth/logout', {}, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined),
   register: (data: RegisterModel) => api.post<AuthResponse>('/auth/register', data),
+  verifyEmail: (token: string) => api.post('/auth/verify-email', { token }),
+  resendVerification: (email: string) => api.post('/auth/resend-verification', { email }),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token: string, newPassword: string) => api.post('/auth/reset-password', { token, newPassword }),
   changePassword: (data: object) => api.post('/auth/change-password', data),
   getProfile: () => api.get('/user/profile'),
   updateProfile: (data: object) => api.put('/user/profile', data),
+  updateMarketingConsent: (enabled: boolean) => api.put('/user/marketing-consent', { enabled }),
   validateId: (idNumber: string) => api.post('/user/validate-id', { idNumber }),
 }
 
@@ -52,11 +73,11 @@ export const tasksApi = {
 export const bankingApi = {
   getBankAccounts: () => api.get('/banking/accounts'),
   getBanks: () => api.get('/banking/banks'),
-  addBankAccount: (data: object) => api.post('/banking/accounts', data),
-  verifyBankAccount: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
-  setDefaultPayoutAccount: (id: number) => api.put(`/banking/bank-accounts/${id}/default`, {}),
-  retryVerification: (id: number) => api.post(`/banking/bank-accounts/${id}/verify`, {}),
-  removeBankAccount: (id: number) => api.delete(`/banking/bank-accounts/${id}`),
+  addBankAccount: (data: object, stepUpToken?: string) => api.post('/banking/accounts', data, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
+  verifyBankAccount: (id: number, stepUpToken?: string) => api.post(`/banking/bank-accounts/${id}/verify`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
+  setDefaultPayoutAccount: (id: number, stepUpToken?: string) => api.put(`/banking/bank-accounts/${id}/default`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
+  retryVerification: (id: number, stepUpToken?: string) => api.post(`/banking/bank-accounts/${id}/verify`, {}, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
+  removeBankAccount: (id: number, stepUpToken?: string) => api.delete(`/banking/bank-accounts/${id}`, stepUpToken ? { headers: { 'X-DFY-Step-Up-Token': stepUpToken } } : undefined),
 }
 
 export const messagesApi = {
@@ -70,6 +91,7 @@ export const supportApi = {
 }
 
 export const notificationsApi = {
+  getUnreadCount: () => api.get('/notifications/unread-count'),
   getAll: (page = 1, pageSize = 20, type?: string, unreadOnly?: boolean) => {
     const params: any = { page, pageSize }
     if (type) params.type = type

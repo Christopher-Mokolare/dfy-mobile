@@ -48,6 +48,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         setNotifications(data)
         setTotalPages(res.data.totalPages || 1)
         setPage(1)
+        void notificationsApi.getUnreadCount()
+          .then(response => {
+            if (response.data?.success) setUnreadCount(Number(response.data.data) || 0)
+          })
+          .catch(() => {})
       }
     } catch {}
     finally { setLoading(false) }
@@ -125,49 +130,99 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, [isAuthenticated, user?.id, pushNotification, fetch, startPolling, stopPolling])
 
   useEffect(() => {
-    if (!isAuthenticated()) { setNotifications([]); return }
+    if (!isAuthenticated()) {
+      setNotifications([])
+      setUnreadCount(0)
+      localReadIdsRef.current.clear()
+      return
+    }
     setLoading(true)
     fetch()
     startPolling(fetch)
     return () => stopPolling()
   }, [isAuthenticated, fetch, startPolling, stopPolling])
 
-  const unreadCount = notifications.filter(n => !n.isRead).length
+  const [unreadCount, setUnreadCount] = useState(0)
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      const response = await notificationsApi.getUnreadCount()
+      if (response.data?.success) setUnreadCount(Number(response.data.data) || 0)
+    } catch {
+      // Preserve the last known server count during temporary connectivity loss.
+    }
+  }, [])
 
   const markRead = useCallback(async (id: number) => {
+    const wasUnread = notifications.some(n => n.id === id && !n.isRead)
+    if (!wasUnread) return
+    setUnreadCount(current => Math.max(0, current - 1))
     localReadIdsRef.current.add(id)
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n))
-    await notificationsApi.markRead(String(id))
-      .then(() => localReadIdsRef.current.delete(id))
-      .catch(() => {})
-  }, [])
+    try {
+      const response = await notificationsApi.markRead(String(id))
+      if (!response.data?.success) throw new Error(response.data?.message || 'Unable to mark notification as read.')
+      localReadIdsRef.current.delete(id)
+      await refreshUnreadCount()
+    } catch {
+      localReadIdsRef.current.delete(id)
+      await fetch()
+    }
+  }, [fetch, notifications, refreshUnreadCount])
 
   const markAllRead = useCallback(async () => {
     setNotifications(prev => { prev.forEach(n => localReadIdsRef.current.add(n.id)); return prev.map(n => ({ ...n, isRead: true })) })
-    await notificationsApi.markAllRead().then(() => localReadIdsRef.current.clear()).catch(() => {})
-  }, [])
+    setUnreadCount(0)
+    try {
+      const response = await notificationsApi.markAllRead()
+      if (!response.data?.success) throw new Error(response.data?.message || 'Unable to mark notifications as read.')
+      localReadIdsRef.current.clear()
+      await refreshUnreadCount()
+    } catch {
+      localReadIdsRef.current.clear()
+      await fetch()
+    }
+  }, [fetch, refreshUnreadCount])
 
-  const markTaskNotificationsRead = useCallback((taskId: string | number) => {
-    setNotifications(prev => {
-      const toMark = prev.filter(n => !n.isRead && n.type === 'new_message' && String(n.relatedTaskId) === String(taskId))
-      if (toMark.length === 0) return prev
-      toMark.forEach(n => localReadIdsRef.current.add(n.id))
-      notificationsApi.markTaskRead(Number(taskId))
-        .then(() => toMark.forEach(n => localReadIdsRef.current.delete(n.id)))
-        .catch(() => {})
-      return prev.map(n => toMark.some(m => m.id === n.id) ? { ...n, isRead: true } : n)
-    })
-  }, [])
+  const markTaskNotificationsRead = useCallback(async (taskId: string | number) => {
+    const toMark = notifications.filter(n => !n.isRead && n.type === 'new_message' && String(n.relatedTaskId) === String(taskId))
+    if (toMark.length === 0) return
+    toMark.forEach(n => localReadIdsRef.current.add(n.id))
+    setNotifications(prev => prev.map(n => toMark.some(m => m.id === n.id) ? { ...n, isRead: true } : n))
+    setUnreadCount(current => Math.max(0, current - toMark.length))
+    try {
+      const response = await notificationsApi.markTaskRead(Number(taskId))
+      if (!response.data?.success) throw new Error(response.data?.message || 'Unable to mark task notifications as read.')
+      toMark.forEach(n => localReadIdsRef.current.delete(n.id))
+      await refreshUnreadCount()
+    } catch {
+      toMark.forEach(n => localReadIdsRef.current.delete(n.id))
+      await fetch()
+    }
+  }, [fetch, notifications, refreshUnreadCount])
 
   const remove = useCallback(async (id: number) => {
+    const wasUnread = notifications.some(n => n.id === id && !n.isRead)
     setNotifications(prev => prev.filter(n => n.id !== id))
-    await notificationsApi.remove(String(id)).catch(() => {})
-  }, [])
+    if (wasUnread) setUnreadCount(current => Math.max(0, current - 1))
+    try {
+      const response = await notificationsApi.remove(String(id))
+      if (!response.data?.success) throw new Error(response.data?.message || 'Unable to remove notification.')
+      await refreshUnreadCount()
+    } catch {
+      await fetch()
+    }
+  }, [fetch, notifications, refreshUnreadCount])
 
   const clearRead = useCallback(async () => {
     setNotifications(prev => prev.filter(n => !n.isRead))
-    await notificationsApi.clearRead().catch(() => {})
-  }, [])
+    try {
+      const response = await notificationsApi.clearRead()
+      if (!response.data?.success) throw new Error(response.data?.message || 'Unable to clear notifications.')
+      await refreshUnreadCount()
+    } catch {
+      await fetch()
+    }
+  }, [fetch, refreshUnreadCount])
 
   return (
     <NotificationContext.Provider value={{

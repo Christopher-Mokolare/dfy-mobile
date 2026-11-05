@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { View, Text, FlatList, RefreshControl, StyleSheet, Alert } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import { tasksApi, ratingsApi, disputesApi } from '../../api'
 import { EmptyState, LoadingScreen } from '../../components/Common'
 import StatusBadge from '../../components/StatusBadge'
@@ -33,13 +34,17 @@ export default function MyCompletedTasksScreen({ navigation }: any) {
     } finally { setLoading(false); setRefreshing(false) }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useFocusEffect(useCallback(() => { void load() }, [load]))
 
   const submitRating = async () => {
     if (!ratingTask) return
     setActionLoading(true)
     try {
-      await ratingsApi.submit(ratingTask.taskId, rating, ratingReview)
+      const response = await ratingsApi.submit(ratingTask.taskId, rating, ratingReview)
+      if (!response.data?.success) {
+        Alert.alert('Unable to submit rating', response.data?.message || 'Your rating was not submitted. Please try again.')
+        return
+      }
       setRatingTask(null); setRatingReview('')
       Alert.alert('Thanks!', 'Your rating was submitted.')
     } catch { Alert.alert('Error', 'Failed to submit rating.') }

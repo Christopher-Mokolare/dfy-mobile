@@ -1,7 +1,9 @@
 import React, { useRef, useState } from 'react'
-import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../context/AuthContext'
+import { authApi } from '../../api'
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton'
 import AuthBrandHeader from '../../components/AuthBrandHeader'
 import AuthScreenLayout from '../../components/AuthScreenLayout'
 import FormField from '../../components/FormField'
@@ -10,48 +12,110 @@ import { colors, fonts, radii } from '../../theme'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export default function LoginScreen({ navigation }: any) {
-  const { login } = useAuth()
+  const { login, googleLogin } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [resending, setResending] = useState(false)
   const [emailError, setEmailError] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [formError, setFormError] = useState('')
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
+  const [secondFactorCode, setSecondFactorCode] = useState('')
+  const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null)
   const passwordRef = useRef<TextInput>(null)
 
-  const requestPasswordReset = () => {
-    const subject = encodeURIComponent('Password reset assistance')
-    const accountEmail = email.trim() || '(please add the email address for my account)'
-    const body = encodeURIComponent(
-      `Hello DoForYou Support,\n\nI need help regaining access to my account. Please advise me on the secure next steps to reset my password.\n\nAccount email: ${accountEmail}\n\nThank you.`,
-    )
-    void Linking.openURL(`mailto:info@doforyou.co.za?subject=${subject}&body=${body}`).catch(() => {
-      Alert.alert(
-        'Contact DoForYou support',
-        'We could not open your email app. Please email info@doforyou.co.za with the subject “Password reset assistance”.',
-      )
-    })
+  const requestPasswordReset = async () => {
+    const accountEmail = email.trim().toLowerCase()
+    if (!EMAIL_RE.test(accountEmail)) {
+      Alert.alert('Enter your email', 'Enter the email address for your DoForYou account first.')
+      return
+    }
+    try {
+      const response = await authApi.forgotPassword(accountEmail)
+      Alert.alert('Check your email', response.data?.message || 'If an account matches that email, reset instructions will be sent shortly.')
+    } catch {
+      Alert.alert('Check your email', 'If an account matches that email, reset instructions will be sent shortly.')
+    }
+  }
+
+  const resendVerification = async () => {
+    const accountEmail = email.trim().toLowerCase()
+    if (!EMAIL_RE.test(accountEmail)) {
+      Alert.alert('Enter your email', 'Enter the email address for your account first.')
+      return
+    }
+    setResending(true)
+    try {
+      const response = await authApi.resendVerification(accountEmail)
+      Alert.alert('Check your inbox', response.data?.message || 'If the account needs verification, an email will be sent shortly.')
+      setFormError('')
+    } catch {
+      Alert.alert('Check your inbox', 'If the account needs verification, an email will be sent shortly.')
+      setFormError('')
+    } finally {
+      setResending(false)
+    }
   }
 
   const handleSignIn = async () => {
     if (loading) return
     const trimmedEmail = email.trim()
 
-    const nextEmailError = EMAIL_RE.test(trimmedEmail) ? '' : 'Enter a valid email address.'
-    const nextPasswordError = password ? '' : 'Enter your password.'
-    setEmailError(nextEmailError)
-    setPasswordError(nextPasswordError)
-    setFormError('')
-    if (nextEmailError || nextPasswordError) return
+    if (requiresTwoFactor && !secondFactorCode.trim()) {
+      setFormError('Enter the authenticator or recovery code to continue.')
+      return
+    }
 
+    if (!pendingGoogleToken) {
+      const nextEmailError = EMAIL_RE.test(trimmedEmail) ? '' : 'Enter a valid email address.'
+      const nextPasswordError = password ? '' : 'Enter your password.'
+      setEmailError(nextEmailError)
+      setPasswordError(nextPasswordError)
+      if (nextEmailError || nextPasswordError) return
+    }
+
+    setFormError('')
     setLoading(true)
     try {
-      await login(trimmedEmail, password)
+      if (pendingGoogleToken) {
+        await googleLogin(pendingGoogleToken, requiresTwoFactor ? secondFactorCode.trim() : undefined)
+      } else {
+        await login(trimmedEmail.toLowerCase(), password, requiresTwoFactor ? secondFactorCode.trim() : undefined)
+      }
+      setPendingGoogleToken(null)
+      setRequiresTwoFactor(false)
+      setSecondFactorCode('')
     } catch (err: any) {
-      setFormError(
-        err.response?.data?.message || err.message || 'We could not sign you in. Please try again.',
-      )
+      if (err.response?.data?.requiresTwoFactor) {
+        setRequiresTwoFactor(true)
+        setFormError(err.response?.data?.message || 'Enter your authenticator or recovery code to continue.')
+      } else if (err.response?.data?.requiresAccountSetup && pendingGoogleToken) {
+        navigation.navigate('Register', { googleIdToken: pendingGoogleToken })
+      } else {
+        setFormError(err.response?.data?.message || err.message || 'We could not sign you in. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleIdToken = async (idToken: string) => {
+    setLoading(true)
+    setFormError('')
+    try {
+      await googleLogin(idToken)
+    } catch (err: any) {
+      if (err.response?.data?.requiresTwoFactor) {
+        setPendingGoogleToken(idToken)
+        setRequiresTwoFactor(true)
+        setFormError(err.response?.data?.message || 'Enter your authenticator or recovery code to continue.')
+      } else if (err.response?.data?.requiresAccountSetup) {
+        navigation.navigate('Register', { googleIdToken: idToken })
+      } else {
+        setFormError(err.response?.data?.message || err.message || 'Google sign-in could not be completed.')
+      }
     } finally {
       setLoading(false)
     }
@@ -62,15 +126,15 @@ export default function LoginScreen({ navigation }: any) {
       <Pressable
         style={({ pressed }: { pressed: boolean }) => [styles.button, pressed && !loading && styles.pressed, loading && styles.loading]}
         onPress={handleSignIn}
-        disabled={loading}
+        disabled={loading || (requiresTwoFactor && !secondFactorCode.trim())}
         accessibilityRole="button"
-        accessibilityLabel="Sign in to DFY"
+        accessibilityLabel={requiresTwoFactor ? 'Verify and sign in' : 'Sign in to DFY'}
       >
         {loading ? (
           <ActivityIndicator color={colors.text} />
         ) : (
           <View style={styles.buttonInner}>
-            <Text style={styles.buttonText}>Sign in to DFY</Text>
+            <Text style={styles.buttonText}>{requiresTwoFactor ? 'Verify & sign in' : 'Sign in to DFY'}</Text>
             <Ionicons name="arrow-forward" size={18} color={colors.text} />
           </View>
         )}
@@ -112,6 +176,11 @@ export default function LoginScreen({ navigation }: any) {
           <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
             <Text style={styles.errorText}>{formError}</Text>
           </View>
+        )}
+        {formError.toLowerCase().includes('verify your email') && (
+          <Pressable onPress={resendVerification} disabled={resending} style={styles.forgot} accessibilityRole="button">
+            <Text style={styles.link}>{resending ? 'Sending verification email…' : 'Resend verification email'}</Text>
+          </Pressable>
         )}
 
         <FormField
@@ -159,6 +228,28 @@ export default function LoginScreen({ navigation }: any) {
             </Pressable>
           }
         />
+
+        {requiresTwoFactor && (
+          <FormField
+            label="Authenticator or recovery code"
+            value={secondFactorCode}
+            onChangeText={setSecondFactorCode}
+            placeholder="Six-digit code or recovery code"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            autoComplete="one-time-code"
+            textContentType="oneTimeCode"
+            maxLength={20}
+            returnKeyType="go"
+            onSubmitEditing={handleSignIn}
+            containerStyle={{ marginTop: 8 }}
+          />
+        )}
+
+        <View style={{ gap: 12, marginTop: 18 }}>
+          <View style={styles.orRow}><View style={styles.orLine} /><Text style={styles.orText}>or</Text><View style={styles.orLine} /></View>
+          <GoogleSignInButton onIdToken={handleGoogleIdToken} disabled={loading} />
+        </View>
 
         <Pressable
           onPress={requestPasswordReset}
@@ -241,4 +332,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   secureText: { fontFamily: fonts.regular, fontSize: 12, color: colors.textSecondary },
+  orRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  orLine: { height: 1, flex: 1, backgroundColor: colors.cardBorder },
+  orText: { color: colors.textSecondary, fontFamily: fonts.regular, fontSize: 12 },
 })

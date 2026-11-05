@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, Alert, RefreshControl, TouchableOpacity, TextInput } from 'react-native'
 import { tasksApi, disputesApi, ratingsApi } from '../../api'
+import { useFocusEffect } from '@react-navigation/native'
 import { LoadingScreen, EmptyState } from '../../components/Common'
 import StatusBadge from '../../components/StatusBadge'
 import AppModal from '../../components/AppModal'
@@ -26,16 +27,16 @@ export default function MyActiveTasksScreen({ navigation }: any) {
   const [ratingReview, setRatingReview] = useState('')
   const [ratedTaskIds, setRatedTaskIds] = useState<Set<string>>(new Set())
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     try {
       const res = await tasksApi.getMyActive()
       const data = res.data?.data || []
       setTasks(Array.isArray(data) ? data : [])
     } catch {}
     finally { setLoading(false); setRefreshing(false) }
-  }
+  }, [])
 
-  useEffect(() => { loadTasks() }, [])
+  useFocusEffect(useCallback(() => { void loadTasks() }, [loadTasks]))
   const onRefresh = () => { setRefreshing(true); loadTasks() }
 
   const norm = (t: any) => ({

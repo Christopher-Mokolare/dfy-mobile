@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity,
   Alert, RefreshControl, Linking
 } from 'react-native'
 import * as WebBrowser from 'expo-web-browser'
+import { useFocusEffect } from '@react-navigation/native'
 import { tasksApi, ratingsApi, disputesApi } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import { LoadingScreen, EmptyState, SectionCard } from '../../components/Common'
@@ -39,7 +40,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
   const [ratingReview, setRatingReview] = useState('')
   const [ratedTaskIds, setRatedTaskIds] = useState<Set<string>>(new Set())
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     try {
       const res = await tasksApi.getMyPosted()
       const inner = res.data?.data
@@ -47,9 +48,9 @@ export default function MyPostedTasksScreen({ navigation }: any) {
       setTasks(raw)
     } catch { Alert.alert('Error', 'Failed to load tasks.') }
     finally { setLoading(false); setRefreshing(false) }
-  }
+  }, [])
 
-  useEffect(() => { loadTasks() }, [])
+  useFocusEffect(useCallback(() => { void loadTasks() }, [loadTasks]))
   const onRefresh = () => { setRefreshing(true); loadTasks() }
 
   const grouped = {

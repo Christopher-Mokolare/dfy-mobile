@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl,
 } from 'react-native'
+import { useFocusEffect } from '@react-navigation/native'
 import { useAuth } from '../context/AuthContext'
 import { tasksApi, ratingsApi } from '../api'
 import { LoadingScreen } from '../components/Common'
@@ -78,9 +79,9 @@ export default function DashboardScreen({ navigation }: any) {
     }
   }, [canRun, user?.id])
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     void load()
-  }, [load])
+  }, [load]))
 
   const onRefresh = () => {
     setRefreshing(true)
