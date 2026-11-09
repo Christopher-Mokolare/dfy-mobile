@@ -95,6 +95,11 @@ jobs:
     env:
       EXPO_PUBLIC_DFY_API_URL: https://dfy-be-staging.onrender.com/api/v1
       EXPO_PUBLIC_DFY_SIGNALR_URL: https://dfy-be-staging.onrender.com
+      # OAuth client IDs are public app configuration, not private secrets.
+      # Set these repository Actions variables to enable Google sign-in in the APK.
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+      EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+      EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -153,6 +158,31 @@ jobs:
           name: dfy-mobile-android-release
           path: android/app/build/outputs/apk/release/dfy-mobile.apk
           if-no-files-found: error
+      - name: Publish direct-download staging-branch release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mobile-staging-branch-latest
+          target_commitish: staging
+          name: DoForYou Mobile — Latest staging-branch APK
+          body: |
+            Installable Android staging build from the staging branch.
+            This APK connects to the DFY staging API and is intended for testing, not production use.
+            Device-level login and task-flow smoke tests are still required.
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          files: android/app/build/outputs/apk/release/dfy-mobile.apk
+      - name: Trigger DFY-FE staging deployment after staging APK release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.DFY_FE_STAGING_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "::warning::DFY_FE_STAGING_DEPLOY_HOOK is not configured; website deployment was skipped."
+            exit 0
+          fi
+          curl --fail --silent --show-error --request POST "$RENDER_DEPLOY_HOOK"
       - name: Publish direct-download staging release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
