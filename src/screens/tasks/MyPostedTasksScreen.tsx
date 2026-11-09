@@ -245,6 +245,11 @@ export default function MyPostedTasksScreen({ navigation }: any) {
               ['awaitingconfirmation', 'awaiting_confirmation'].includes(task.taskStatus?.toLowerCase() || '') ? (
                 ['disputepending'].includes(task.paymentStatus?.toLowerCase() || '') || task.escrowStatus?.toLowerCase() === 'disputed' ? (
                   <View style={[s.infoBox, { marginTop: 8 }]}><Text style={s.infoText}>A dispute is open. Escrow remains frozen pending review.</Text></View>
+                ) : task.escrowStatus?.toLowerCase() === 'incident_hold' ? (
+                  <View style={{ marginTop: 8, gap: 8 }}>
+                    <View style={[s.infoBox, { borderColor: COLORS.warning }]}><Text style={s.infoText}>🔒 DFY has placed a temporary incident hold. Confirmation and automatic payout are paused while the report is reviewed. You may still raise a completion dispute.</Text></View>
+                    <Button title="Raise Completion Dispute" onPress={() => void openCompletionDispute(task)} fullWidth size="sm" variant="outline" />
+                  </View>
                 ) : (
                   <View style={{ marginTop: 8, gap: 8 }}>
                     <Button title="✅ Confirm Completion" onPress={() => void openCompletionConfirm(task)} fullWidth size="sm" />
