@@ -63,6 +63,19 @@ export default function MyPostedTasksScreen({ navigation }: any) {
 
   const toggle = (sec: Section) => setExpanded(e => ({ ...e, [sec]: !e[sec] }))
 
+  const openCompletionConfirm = async (task: Task) => {
+    try {
+      const detail = await tasksApi.getById(task.taskId)
+      if (!detail.data?.success || !detail.data?.data?.canConfirm) {
+        Alert.alert('Confirmation unavailable', detail.data?.message || 'Confirmation is unavailable while this task is under review.')
+        return
+      }
+      setConfirmModal(task)
+    } catch (error: any) {
+      Alert.alert('Unable to check eligibility', error?.response?.data?.message || 'Refresh the task and try again.')
+    }
+  }
+
   const handleConfirm = async () => {
     if (!confirmModal) return
     setActionLoading(true)
@@ -234,7 +247,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
                   <View style={[s.infoBox, { marginTop: 8 }]}><Text style={s.infoText}>A dispute is open. Escrow remains frozen pending review.</Text></View>
                 ) : (
                   <View style={{ marginTop: 8, gap: 8 }}>
-                    <Button title="✅ Confirm Completion" onPress={() => setConfirmModal(task)} fullWidth size="sm" />
+                    <Button title="✅ Confirm Completion" onPress={() => void openCompletionConfirm(task)} fullWidth size="sm" />
                     <Button title="Raise Completion Dispute" onPress={() => void openCompletionDispute(task)} fullWidth size="sm" variant="outline" />
                   </View>
                 )
