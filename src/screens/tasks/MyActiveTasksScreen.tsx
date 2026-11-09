@@ -173,3 +173,22 @@ export default function MyActiveTasksScreen({ navigation }: any) {
   )
 }
 
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  list: { padding: SPACING.md, gap: 12, paddingBottom: 32 },
+  taskCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: SPACING.md, ...SHADOW.sm },
+  taskHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  budget: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
+  budgetSub: { fontSize: 11, color: COLORS.textMuted, fontWeight: '400' },
+  taskTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
+  taskMeta: { gap: 4, marginBottom: 10 },
+  metaItem: { fontSize: 12, color: COLORS.textSecondary },
+  actions: { flexDirection: 'row', gap: 8 },
+  modalText: { fontSize: 14, color: COLORS.textSecondary },
+  modalBold: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
+  infoBox: { backgroundColor: '#EFF6FF', borderRadius: RADIUS.md, padding: 12 },
+  infoText: { fontSize: 13, color: COLORS.info },
+  starsRow: { flexDirection: 'row', gap: 8 },
+  star: { fontSize: 32, color: COLORS.border },
+  starActive: { color: COLORS.secondary },
+})
