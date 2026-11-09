@@ -120,11 +120,6 @@ export default function MyActiveTasksScreen({ navigation }: any) {
             <Button title="✅ Mark Complete" onPress={() => setCompleteModal(raw)} fullWidth size="sm" />
           </View>
         )}
-        {isActive && (
-          <View style={[styles.actions, { marginTop: 8 }]}>
-            <Button title="⚠️ Raise Dispute" onPress={() => setDisputeModal(raw)} variant="outline" size="sm" fullWidth textStyle={{ color: COLORS.danger }} />
-          </View>
-        )}
         {isDone && !ratedTaskIds.has(t.taskId) && (
           <View style={[styles.actions, { marginTop: 8 }]}>
             <Button title="⭐ Rate Creator" onPress={() => { setRatingModal(raw); setRatingValue(5); setRatingReview('') }} variant="outline" size="sm" fullWidth />
