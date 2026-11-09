@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, Alert, RefreshControl, TouchableOpacity, TextInput } from 'react-native'
-import { tasksApi, disputesApi, ratingsApi } from '../../api'
+import { tasksApi, ratingsApi } from '../../api'
 import { useFocusEffect } from '@react-navigation/native'
 import { LoadingScreen, EmptyState } from '../../components/Common'
 import StatusBadge from '../../components/StatusBadge'
@@ -20,7 +20,6 @@ export default function MyActiveTasksScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [completeModal, setCompleteModal] = useState<any | null>(null)
-  const [disputeModal, setDisputeModal] = useState<any | null>(null)
   const [ratingModal, setRatingModal] = useState<any | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [ratingValue, setRatingValue] = useState(5)
@@ -61,18 +60,6 @@ export default function MyActiveTasksScreen({ navigation }: any) {
       await loadTasks()
       Alert.alert('Done!', 'Task marked complete. Waiting for creator to confirm.')
     } catch { Alert.alert('Error', 'Failed to mark complete.') }
-    finally { setActionLoading(false) }
-  }
-
-  const handleDispute = async (issue: string, category: string) => {
-    if (!disputeModal || !issue.trim()) return
-    setActionLoading(true)
-    try {
-      await disputesApi.raise(norm(disputeModal).taskId, issue, category)
-      setDisputeModal(null)
-      await loadTasks()
-      Alert.alert('Dispute Raised', 'An admin will review your dispute.')
-    } catch { Alert.alert('Error', 'Failed to raise dispute.') }
     finally { setActionLoading(false) }
   }
 
@@ -120,11 +107,6 @@ export default function MyActiveTasksScreen({ navigation }: any) {
             <Button title="✅ Mark Complete" onPress={() => setCompleteModal(raw)} fullWidth size="sm" />
           </View>
         )}
-        {isActive && (
-          <View style={[styles.actions, { marginTop: 8 }]}>
-            <Button title="⚠️ Raise Dispute" onPress={() => setDisputeModal(raw)} variant="outline" size="sm" fullWidth textStyle={{ color: COLORS.danger }} />
-          </View>
-        )}
         {isDone && !ratedTaskIds.has(t.taskId) && (
           <View style={[styles.actions, { marginTop: 8 }]}>
             <Button title="⭐ Rate Creator" onPress={() => { setRatingModal(raw); setRatingValue(5); setRatingReview('') }} variant="outline" size="sm" fullWidth />
@@ -166,14 +148,6 @@ export default function MyActiveTasksScreen({ navigation }: any) {
         )}
       </AppModal>
 
-      <DisputeModal
-        visible={!!disputeModal}
-        onClose={() => setDisputeModal(null)}
-        onSubmit={handleDispute}
-        loading={actionLoading}
-        taskDesc={disputeModal ? norm(disputeModal).taskDescription : ''}
-      />
-
       <AppModal visible={!!ratingModal} onClose={() => setRatingModal(null)} title="Rate the Creator"
         footer={
           <>
@@ -199,57 +173,3 @@ export default function MyActiveTasksScreen({ navigation }: any) {
   )
 }
 
-function DisputeModal({ visible, onClose, onSubmit, loading, taskDesc }: any) {
-  const [issue, setIssue] = useState('')
-  const [category, setCategory] = useState('General')
-  const CATS = ['General', 'Payment', 'Quality', 'NoShow', 'Fraud']
-  return (
-    <AppModal visible={visible} onClose={onClose} title="Raise Dispute"
-      footer={
-        <>
-          <Button title="Cancel" onPress={onClose} variant="outline" style={{ flex: 1 }} />
-          <Button title="Submit Dispute" onPress={() => onSubmit(issue, category)} loading={loading} disabled={!issue.trim()} variant="danger" style={{ flex: 1 }} />
-        </>
-      }
-    >
-      <View style={{ gap: 12 }}>
-        <Text style={{ fontSize: 14, color: '#6B7280' }}>Task: <Text style={{ fontWeight: '700', color: '#111827' }}>{taskDesc}</Text></Text>
-        <View style={{ backgroundColor: '#FEF3C7', borderRadius: 8, padding: 10 }}>
-          <Text style={{ fontSize: 13, color: '#92400E' }}>⚠️ Escrow will be frozen until an admin resolves the dispute.</Text>
-        </View>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#111827' }}>Category</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {CATS.map(c => (
-            <TouchableOpacity key={c} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1.5, borderColor: category === c ? COLORS.primary : COLORS.border, backgroundColor: category === c ? '#EEF2FF' : 'transparent' }} onPress={() => setCategory(c)}>
-              <Text style={{ fontSize: 12, color: category === c ? COLORS.primary : COLORS.textSecondary, fontWeight: category === c ? '600' : '400' }}>{c}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: '#111827' }}>Describe the issue *</Text>
-        <View style={{ borderWidth: 1.5, borderColor: COLORS.border, borderRadius: 10, padding: 12, minHeight: 100 }}>
-          <Text style={{ fontSize: 14, color: issue ? '#111827' : COLORS.textMuted }} onPress={() => {}} >{issue || 'Tap to type...'}</Text>
-        </View>
-      </View>
-    </AppModal>
-  )
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  list: { padding: SPACING.md, gap: 12, paddingBottom: 32 },
-  taskCard: { backgroundColor: COLORS.surface, borderRadius: RADIUS.lg, padding: SPACING.md, ...SHADOW.sm },
-  taskHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  budget: { fontSize: 18, fontWeight: '800', color: COLORS.primary },
-  budgetSub: { fontSize: 11, color: COLORS.textMuted, fontWeight: '400' },
-  taskTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8 },
-  taskMeta: { gap: 4, marginBottom: 10 },
-  metaItem: { fontSize: 12, color: COLORS.textSecondary },
-  actions: { flexDirection: 'row', gap: 8 },
-  modalText: { fontSize: 14, color: COLORS.textSecondary },
-  modalBold: { fontSize: 15, fontWeight: '700', color: COLORS.textPrimary },
-  infoBox: { backgroundColor: '#EFF6FF', borderRadius: RADIUS.md, padding: 12 },
-  infoText: { fontSize: 13, color: COLORS.info },
-  starsRow: { flexDirection: 'row', gap: 8 },
-  star: { fontSize: 32, color: COLORS.border },
-  starActive: { color: COLORS.secondary },
-})
