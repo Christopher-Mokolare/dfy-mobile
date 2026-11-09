@@ -44,6 +44,7 @@ export default function TaskChatScreen({ route, navigation }: any) {
   const [incidentCategory, setIncidentCategory] = useState('Scope change')
   const [incidentDescription, setIncidentDescription] = useState('')
   const [incidentSubmitting, setIncidentSubmitting] = useState(false)
+  const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<number[]>([])
   const [taskInfo, setTaskInfo] = useState<any>(null)
 
   const hubRef = useRef<signalR.HubConnection | null>(null)
@@ -182,9 +183,11 @@ export default function TaskChatScreen({ route, navigation }: any) {
       const res = await incidentsApi.report(String(taskId), {
         category: incidentCategory,
         description: incidentDescription.trim(),
+        evidenceMessageIds: selectedEvidenceIds,
       })
       if (res.data?.success === false) throw new Error(res.data.message || 'Unable to submit report')
       setIncidentDescription('')
+      setSelectedEvidenceIds([])
       setIncidentOpen(false)
       Alert.alert('Report submitted', 'Your report has been sent to DoForYou support. Reporting an incident does not automatically change escrow or payout status.')
     } catch (error: any) {
@@ -205,6 +208,16 @@ export default function TaskChatScreen({ route, navigation }: any) {
           <Text style={[styles.msgText, msg.isCurrentUser && styles.msgTextMine]}>{msg.content}</Text>
           <Text style={[styles.msgTime, msg.isCurrentUser && styles.msgTimeMine]}>{formatTime(msg.timestamp)}</Text>
         </View>
+        {!msg.isSystem && Number.isInteger(Number(msg.id)) && Number(msg.id) > 0 && (
+          <TouchableOpacity
+            onPress={() => setSelectedEvidenceIds(ids => ids.includes(Number(msg.id)) ? ids.filter(id => id !== Number(msg.id)) : ids.length < 10 ? [...ids, Number(msg.id)] : ids)}
+            style={styles.evidenceToggle}
+          >
+            <Text style={[styles.evidenceToggleText, selectedEvidenceIds.includes(Number(msg.id)) && styles.evidenceToggleSelected]}>
+              {selectedEvidenceIds.includes(Number(msg.id)) ? '✓ Evidence attached' : '＋ Attach evidence'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       {msg.isCurrentUser && (
         <View style={[styles.avatar, styles.avatarMine]}><Text style={styles.avatarText}>{getInitials(msg.senderName)}</Text></View>
@@ -268,7 +281,7 @@ export default function TaskChatScreen({ route, navigation }: any) {
               maxLength={2000}
               textAlignVertical="top"
             />
-            <Text style={styles.incidentNotice}>Submitting an incident does not automatically freeze escrow or stop a payout.</Text>
+            <Text style={styles.incidentNotice}>Submitting an incident does not automatically freeze escrow or stop a payout. {selectedEvidenceIds.length} chat message(s) attached.</Text>
             <View style={styles.incidentActions}>
               <TouchableOpacity onPress={() => setIncidentOpen(false)} disabled={incidentSubmitting} style={styles.cancelIncidentButton}>
                 <Text style={styles.cancelIncidentText}>Cancel</Text>
@@ -307,6 +320,10 @@ export default function TaskChatScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   reportButton: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#FEE2E2' },
+  evidenceToggle: { alignSelf: 'flex-end', paddingHorizontal: 5, paddingVertical: 3 },
+  evidenceToggleText: { color: COLORS.textMuted, fontSize: 10 },
+  evidenceToggleSelected: { color: COLORS.primary, fontWeight: '700' },
+
   reportButtonText: { color: '#991B1B', fontSize: 12, fontWeight: '700' },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.6)', justifyContent: 'center', padding: 18 },
   incidentModal: { backgroundColor: COLORS.surface, borderRadius: 18, padding: 18, gap: 10, maxHeight: '90%' },
