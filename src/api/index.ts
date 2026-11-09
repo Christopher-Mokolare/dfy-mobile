@@ -105,6 +105,12 @@ export const notificationsApi = {
   clearRead: () => api.delete('/notifications/clear-read'),
 }
 
+export const taskIncidentsApi = {
+  report: (taskId: string, data: { category: string; description: string; evidenceMessageIds?: number[] }) =>
+    api.post(`/tasks/${encodeURIComponent(taskId)}/incidents`, data),
+  getMine: () => api.get('/incidents/my'),
+}
+
 export const disputesApi = {
   raise: (taskId: string, issue: string, category: string) => api.post('/disputes', { taskId, issue, category }),
   getMy: () => api.get('/disputes/my'),
