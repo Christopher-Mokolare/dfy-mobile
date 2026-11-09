@@ -208,7 +208,7 @@ export default function TaskChatScreen({ route, navigation }: any) {
           <Text style={[styles.msgText, msg.isCurrentUser && styles.msgTextMine]}>{msg.content}</Text>
           <Text style={[styles.msgTime, msg.isCurrentUser && styles.msgTimeMine]}>{formatTime(msg.timestamp)}</Text>
         </View>
-        {!msg.isSystem && Number.isInteger(Number(msg.id)) && Number(msg.id) > 0 && (
+        {Number.isInteger(Number(msg.id)) && Number(msg.id) > 0 && (
           <TouchableOpacity
             onPress={() => setSelectedEvidenceIds(ids => ids.includes(Number(msg.id)) ? ids.filter(id => id !== Number(msg.id)) : ids.length < 10 ? [...ids, Number(msg.id)] : ids)}
             style={styles.evidenceToggle}
