@@ -44,6 +44,7 @@ export default function TaskChatScreen({ route, navigation }: any) {
   const [incidentCategory, setIncidentCategory] = useState('Scope change')
   const [incidentDescription, setIncidentDescription] = useState('')
   const [incidentSubmitting, setIncidentSubmitting] = useState(false)
+  const [taskInfo, setTaskInfo] = useState<any>(null)
 
   const hubRef = useRef<signalR.HubConnection | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -74,6 +75,13 @@ export default function TaskChatScreen({ route, navigation }: any) {
     } catch {}
     finally { setLoading(false) }
   }, [taskId, mergeMessages])
+
+  useEffect(() => {
+    if (!taskId) return
+    tasksApi.getById(String(taskId))
+      .then(res => { if (res.data?.success) setTaskInfo(res.data.data) })
+      .catch(() => {})
+  }, [taskId])
 
   useEffect(() => {
     if (!taskId) return
@@ -210,9 +218,9 @@ export default function TaskChatScreen({ route, navigation }: any) {
         <View style={[styles.statusDot, { backgroundColor: connected ? COLORS.success : COLORS.warning }]} />
         <Text style={styles.statusText}>{connected ? 'Live' : 'Polling'}</Text>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={() => setIncidentOpen(true)} style={styles.reportButton}>
+        {taskInfo?.canReportIncident && <TouchableOpacity onPress={() => setIncidentOpen(true)} style={styles.reportButton}>
           <Text style={styles.reportButtonText}>⚑ Report issue</Text>
-        </TouchableOpacity>
+        </TouchableOpacity>}
       </View>
 
       {loading ? (
