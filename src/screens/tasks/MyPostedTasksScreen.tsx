@@ -75,6 +75,20 @@ export default function MyPostedTasksScreen({ navigation }: any) {
     finally { setActionLoading(false) }
   }
 
+  const openCompletionDispute = async (task: Task) => {
+    try {
+      const detail = await tasksApi.getById(task.taskId)
+      if (!detail.data?.success || !detail.data?.data?.canDispute) {
+        Alert.alert('Dispute unavailable', detail.data?.message || 'The backend does not currently allow a completion dispute for this task.')
+        return
+      }
+      setDisputeIssue('')
+      setDisputeModal(task)
+    } catch (error: any) {
+      Alert.alert('Unable to check eligibility', error?.response?.data?.message || 'Refresh the task and try again.')
+    }
+  }
+
   const handleRaiseDispute = async () => {
     if (!disputeModal) return
     const issue = disputeIssue.trim()
@@ -221,7 +235,7 @@ export default function MyPostedTasksScreen({ navigation }: any) {
                 ) : (
                   <View style={{ marginTop: 8, gap: 8 }}>
                     <Button title="✅ Confirm Completion" onPress={() => setConfirmModal(task)} fullWidth size="sm" />
-                    <Button title="Raise Dispute" onPress={() => { setDisputeModal(task); setDisputeIssue('') }} fullWidth size="sm" variant="outline" />
+                    <Button title="Raise Completion Dispute" onPress={() => void openCompletionDispute(task)} fullWidth size="sm" variant="outline" />
                   </View>
                 )
               ) : null
