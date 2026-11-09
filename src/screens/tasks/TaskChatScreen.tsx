@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  AppState, View, Text, FlatList, TextInput, TouchableOpacity, Modal,
+  AppState, View, Text, FlatList, TextInput, TouchableOpacity, Modal, Alert,
   StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native'
 import * as signalR from '@microsoft/signalr'
