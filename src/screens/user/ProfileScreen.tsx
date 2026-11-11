@@ -35,6 +35,7 @@ export default function ProfileScreen({ navigation }: any) {
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
   const [identityProviderConfigured, setIdentityProviderConfigured] = useState(false)
   const [identityAttemptsRemaining, setIdentityAttemptsRemaining] = useState(0)
+  const [identityConsentVersion, setIdentityConsentVersion] = useState('identity-verification-v1')
   const [identityConsentAccepted, setIdentityConsentAccepted] = useState(false)
   const [identitySessionLoading, setIdentitySessionLoading] = useState(false)
   const [identitySessionError, setIdentitySessionError] = useState('')
@@ -135,6 +136,7 @@ export default function ProfileScreen({ navigation }: any) {
         if (status) {
           setIdentityProviderConfigured(!!status.configured)
           setIdentityAttemptsRemaining(Number(status.attemptsRemaining ?? 0))
+          setIdentityConsentVersion(String(status.consentVersion || 'identity-verification-v1'))
         }
       } catch {
         if (active) {
@@ -258,15 +260,25 @@ export default function ProfileScreen({ navigation }: any) {
     setIdentitySessionLoading(true)
     setIdentitySessionError('')
     try {
+      const response = await identityVerificationApi.createHandoff({
+        consentAccepted: true,
+        consentVersion: identityConsentVersion,
+      })
+      const body = response.data
+      const data = body?.data || body
+      if (body?.success === false || !data?.handoffCode) {
+        throw new Error(body?.message || 'A secure document-submission link could not be prepared.')
+      }
       const webBase = process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'
-      await Linking.openURL(`${webBase.replace(/\\/$/, '')}/runner-verification`)
+      const url = `${webBase.replace(/\\/$/, '')}/runner-verification#handoff=${encodeURIComponent(String(data.handoffCode))}`
+      await Linking.openURL(url)
       Alert.alert(
         'Document review opened',
-        'Upload the front and back of your South African ID card, or your passport photo-information page. An authorised DFY administrator will review it manually. No selfie or automated face check is used.',
+        'Upload both sides of your South African ID card, or your passport photo-information page. An authorised DFY administrator will review it manually. No selfie or automated face check is used.',
         [{ text: 'OK' }],
       )
     } catch (err: any) {
-      setIdentitySessionError(err.message || 'The DFY identity-document page could not be opened.')
+      setIdentitySessionError(err.response?.data?.message || err.message || 'The DFY identity-document page could not be opened.')
     } finally {
       setIdentitySessionLoading(false)
     }
