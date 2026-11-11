@@ -270,7 +270,7 @@ export default function ProfileScreen({ navigation }: any) {
         throw new Error(body?.message || 'A secure document-submission link could not be prepared.')
       }
       const webBase = process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'
-      const url = `${webBase.replace(/\\/$/, '')}/runner-verification#handoff=${encodeURIComponent(String(data.handoffCode))}`
+      const url = `${webBase.endsWith('/') ? webBase.slice(0, -1) : webBase}/runner-verification#handoff=${encodeURIComponent(String(data.handoffCode))}`
       await Linking.openURL(url)
       Alert.alert(
         'Document review opened',
