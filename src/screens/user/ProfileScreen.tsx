@@ -581,7 +581,7 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={styles.hint}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</Text>
               <Text style={styles.hint}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</Text>
               <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance stays locked until the backend confirms passed identity verification and enabled authenticator 2FA.'}</Text>
-              {identityVerificationStatus !== 'passed' && identityVerificationStatus !== 'manual_review' && identityVerificationStatus !== 'pending' && (
+              {identityVerificationStatus !== 'passed' && identityVerificationStatus !== 'pending' && (
                 <View style={{ marginTop: SPACING.sm, gap: 8 }}>
                   {!identityProviderConfigured ? (
                     <Text style={styles.hint}>DFY's secure document-submission service is not configured on this staging API yet.</Text>
