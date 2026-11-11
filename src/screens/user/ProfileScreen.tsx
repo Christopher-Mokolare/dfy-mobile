@@ -586,7 +586,7 @@ export default function ProfileScreen({ navigation }: any) {
                     <Text style={styles.hint}>Identity verification is not enabled on this staging API yet. Provider credentials, webhook secret, verification level, and an approved notice version must be configured first.</Text>
                   ) : (
                     <>
-                      <Text style={styles.hint}>Sumsub will collect identity-document and liveness evidence. DoForYou stores only the provider status and minimal event metadata.</Text>
+                      <Text style={styles.hint}>Didit will collect identity-document and liveness evidence. DoForYou stores only the provider status and minimal event metadata.</Text>
                       <TouchableOpacity
                         onPress={() => { void Linking.openURL(IDENTITY_PRIVACY_URL).catch(() => Alert.alert('Privacy notice', IDENTITY_PRIVACY_URL)) }}
                         accessibilityRole="link"
