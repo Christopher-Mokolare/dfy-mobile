@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   typecheck-and-bundle:
@@ -56,6 +56,22 @@ jobs:
           name: dfy-openapi-generated
           path: /tmp/dfy-openapi.d.ts
           if-no-files-found: error
+
+      - name: Commit regenerated OpenAPI declarations to PR branch
+        if: github.event_name == 'pull_request'
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          git fetch origin "$PR_HEAD_REF"
+          git checkout "$PR_HEAD_REF"
+          cp /tmp/dfy-openapi.d.ts src/api/openapi.d.ts
+          if ! git diff --quiet -- src/api/openapi.d.ts; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/api/openapi.d.ts
+            git commit -m "chore(api): regenerate OpenAPI declarations from BE staging"
+            git push origin "HEAD:refs/heads/$PR_HEAD_REF"
+          fi
 
       - name: Verify generated OpenAPI declarations
         run: |
