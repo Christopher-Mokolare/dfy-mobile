@@ -13,7 +13,6 @@ const USER_TYPES = [
   { value: 'both', label: '🤝 Both', desc: 'Full access to post and complete tasks' },
 ]
 
-const IDENTITY_VERIFICATION_CONSENT_VERSION = 'identity-verification-v1'
 const IDENTITY_PRIVACY_URL = `${(process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com').replace(/\/$/, '')}/privacy`
 
 export default function ProfileScreen({ navigation }: any) {
@@ -249,35 +248,25 @@ export default function ProfileScreen({ navigation }: any) {
 
   const startIdentityVerification = async () => {
     if (!identityConsentAccepted) {
-      setIdentitySessionError('Accept the identity-verification notice before continuing.')
+      setIdentitySessionError('Accept the DFY identity-document notice before continuing.')
       return
     }
     if (!identityProviderConfigured) {
-      setIdentitySessionError('Identity verification is not configured on this staging API yet.')
+      setIdentitySessionError("DFY secure document submission is not configured on this staging API yet.")
       return
     }
     setIdentitySessionLoading(true)
     setIdentitySessionError('')
     try {
-      const response = await identityVerificationApi.createSession({
-        consentAccepted: true,
-        consentVersion: IDENTITY_VERIFICATION_CONSENT_VERSION,
-      })
-      const body = response.data
-      const data = body?.data || body
-      if (body?.success === false || !data?.handoffCode) {
-        throw new Error(body?.message || 'The identity verification session could not be started.')
-      }
       const webBase = process.env.EXPO_PUBLIC_DFY_WEB_URL || 'https://dfy-fe-staging.onrender.com'
-      const url = `${webBase.replace(/\/$/, '')}/runner-verification#handoff=${encodeURIComponent(String(data.handoffCode))}`
-      await Linking.openURL(url)
+      await Linking.openURL(`${webBase.replace(/\\/$/, '')}/runner-verification`)
       Alert.alert(
-        'Verification opened',
-        'Complete the identity document and liveness steps in your browser. Return to DoForYou when finished; your runner eligibility will refresh from the backend.',
+        'Document review opened',
+        'Upload the front and back of your South African ID card, or your passport photo-information page. An authorised DFY administrator will review it manually. No selfie or automated face check is used.',
         [{ text: 'OK' }],
       )
     } catch (err: any) {
-      setIdentitySessionError(err.response?.data?.message || err.message || 'The identity verification session could not be started.')
+      setIdentitySessionError(err.message || 'The DFY identity-document page could not be opened.')
     } finally {
       setIdentitySessionLoading(false)
     }
@@ -583,10 +572,10 @@ export default function ProfileScreen({ navigation }: any) {
               {identityVerificationStatus !== 'passed' && identityVerificationStatus !== 'manual_review' && (
                 <View style={{ marginTop: SPACING.sm, gap: 8 }}>
                   {!identityProviderConfigured ? (
-                    <Text style={styles.hint}>Identity verification is not enabled on this staging API yet. Provider credentials, webhook secret, verification level, and an approved notice version must be configured first.</Text>
+                    <Text style={styles.hint}>DFY's secure document-submission service is not configured on this staging API yet.</Text>
                   ) : (
                     <>
-                      <Text style={styles.hint}>Sumsub will collect identity-document and liveness evidence. DoForYou stores only the provider status and minimal event metadata.</Text>
+                      <Text style={styles.hint}>DFY stores your identity-document images encrypted and an authorised administrator reviews them manually. No selfie, liveness or automated facial recognition is used.</Text>
                       <TouchableOpacity
                         onPress={() => { void Linking.openURL(IDENTITY_PRIVACY_URL).catch(() => Alert.alert('Privacy notice', IDENTITY_PRIVACY_URL)) }}
                         accessibilityRole="link"
@@ -602,17 +591,17 @@ export default function ProfileScreen({ navigation }: any) {
                           accessibilityLabel="Consent to runner identity and liveness verification"
                         />
                         <Text style={[styles.hint, { flex: 1 }]}>
-                          I consent to runner identity and liveness verification as described in the privacy notice.
+                          I consent to DFY securely processing my identity-document images for runner eligibility review, as described in the privacy notice.
                         </Text>
                       </View>
                       <Text style={styles.hint}>Verification starts remaining in this 24-hour window: {identityAttemptsRemaining}.</Text>
                       {!!identitySessionError && <View style={styles.errorBox} accessibilityRole="alert"><Text style={styles.errorText}>{identitySessionError}</Text></View>}
                       <Button
-                        title={identitySessionLoading ? 'Preparing verification…' : 'Start identity verification'}
+                        title={identitySessionLoading ? 'Opening document submission…' : 'Submit identity documents'}
                         onPress={() => {
                           Alert.alert(
                             'Before you continue',
-                            'The verification provider will collect identity-document and liveness evidence. DoForYou receives the review result. Continue only after reading the Privacy Policy.',
+                            'DFY will securely store your identity-document images for manual review. Continue only after reading the Privacy Policy.',
                             [
                               { text: 'Cancel', style: 'cancel' },
                               { text: 'Continue', onPress: () => { void startIdentityVerification() } },
