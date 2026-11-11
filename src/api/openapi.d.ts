@@ -3298,13 +3298,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["OzowPayoutVerifyRequest"];
-                    "text/json": components["schemas"]["OzowPayoutVerifyRequest"];
-                    "application/*+json": components["schemas"]["OzowPayoutVerifyRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
@@ -3337,13 +3331,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["OzowPayoutNotificationRequest"];
-                    "text/json": components["schemas"]["OzowPayoutNotificationRequest"];
-                    "application/*+json": components["schemas"]["OzowPayoutNotificationRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
@@ -4189,6 +4177,303 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/{taskId}/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    taskId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateTaskIncidentRequest"];
+                    "text/json": components["schemas"]["CreateTaskIncidentRequest"];
+                    "application/*+json": components["schemas"]["CreateTaskIncidentRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjectApiResponse"];
+                        "application/json": components["schemas"]["ObjectApiResponse"];
+                        "text/json": components["schemas"]["ObjectApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/incidents/my": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjectApiResponse"];
+                        "application/json": components["schemas"]["ObjectApiResponse"];
+                        "text/json": components["schemas"]["ObjectApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    status?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjectApiResponse"];
+                        "application/json": components["schemas"]["ObjectApiResponse"];
+                        "text/json": components["schemas"]["ObjectApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/incidents/{id}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjectApiResponse"];
+                        "application/json": components["schemas"]["ObjectApiResponse"];
+                        "text/json": components["schemas"]["ObjectApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/incidents/{id}/hold-escrow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["IncidentEscrowHoldRequest"];
+                    "text/json": components["schemas"]["IncidentEscrowHoldRequest"];
+                    "application/*+json": components["schemas"]["IncidentEscrowHoldRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjectApiResponse"];
+                        "application/json": components["schemas"]["ObjectApiResponse"];
+                        "text/json": components["schemas"]["ObjectApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/incidents/{id}/release-escrow-hold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["IncidentEscrowHoldRequest"];
+                    "text/json": components["schemas"]["IncidentEscrowHoldRequest"];
+                    "application/*+json": components["schemas"]["IncidentEscrowHoldRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjectApiResponse"];
+                        "application/json": components["schemas"]["ObjectApiResponse"];
+                        "text/json": components["schemas"]["ObjectApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/incidents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ReviewTaskIncidentRequest"];
+                    "text/json": components["schemas"]["ReviewTaskIncidentRequest"];
+                    "application/*+json": components["schemas"]["ReviewTaskIncidentRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjectApiResponse"];
+                        "application/json": components["schemas"]["ObjectApiResponse"];
+                        "text/json": components["schemas"]["ObjectApiResponse"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/v1/tasks": {
@@ -6082,6 +6367,11 @@ export interface components {
             category?: string | null;
             priority?: string | null;
         };
+        CreateTaskIncidentRequest: {
+            category?: string | null;
+            description?: string | null;
+            evidenceMessageIds?: number[] | null;
+        };
         CreateTaskRequest: {
             taskName: string;
             taskDescription: string;
@@ -6129,6 +6419,9 @@ export interface components {
             privacyVersion: string;
             marketingConsent?: boolean;
         };
+        IncidentEscrowHoldRequest: {
+            reason?: string | null;
+        };
         InitiatePaymentRequest: {
             taskId: string;
         };
@@ -6163,36 +6456,6 @@ export interface components {
             data?: unknown[] | null;
             message?: string | null;
             error?: string | null;
-        };
-        OzowBankingDetails: {
-            bankGroupId?: string | null;
-            accountNumber?: string | null;
-            branchCode?: string | null;
-        };
-        OzowPayoutNotificationRequest: {
-            payoutId?: string | null;
-            siteCode?: string | null;
-            merchantReference?: string | null;
-            customerMerchantReference?: string | null;
-            payoutStatus?: unknown;
-            /** Format: int32 */
-            payoutSubStatus?: number | null;
-            /** Format: int32 */
-            subStatus?: number | null;
-            hashCheck?: string | null;
-        };
-        OzowPayoutVerifyRequest: {
-            payoutId?: string | null;
-            siteCode?: string | null;
-            /** Format: double */
-            amount?: number;
-            merchantReference?: string | null;
-            customerBankReference?: string | null;
-            isRtc?: boolean;
-            notifyUrl?: string | null;
-            verifyUrl?: string | null;
-            bankingDetails?: components["schemas"]["OzowBankingDetails"];
-            hashCheck?: string | null;
         };
         PublishTestimonialRequest: {
             isPublished?: boolean;
@@ -6237,6 +6500,10 @@ export interface components {
         ResetPasswordRequest: {
             email?: string | null;
             newPassword?: string | null;
+        };
+        ReviewTaskIncidentRequest: {
+            status?: string | null;
+            adminNotes?: string | null;
         };
         SendMessageRequest: {
             content?: string | null;
