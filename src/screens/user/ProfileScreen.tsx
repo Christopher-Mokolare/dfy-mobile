@@ -276,7 +276,7 @@ export default function ProfileScreen({ navigation }: any) {
       await Linking.openURL(url)
       Alert.alert(
         'Document review opened',
-        'Upload both sides of your South African ID card, or your passport photo-information page. An authorised DFY administrator will review it manually. No selfie or automated face check is used.',
+        'Upload both sides of your South African Smart ID card, the photo-information page of your green barcoded ID book, or your South African passport photo-information page. An authorised DFY administrator will review it manually. No selfie or automated face check is used.',
         [{ text: 'OK' }],
       )
     } catch (err: any) {
