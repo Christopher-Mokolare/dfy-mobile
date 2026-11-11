@@ -582,7 +582,7 @@ export default function ProfileScreen({ navigation }: any) {
               <Text style={styles.hint}>DFY Document Review: {identityVerificationStatus === 'passed' ? 'DFY Identity Document Reviewed' : identityVerificationStatus === 'more_info_requested' ? 'more information required' : identityVerificationStatus === 'failed' ? 'review unsuccessful' : identityVerificationStatus.replace(/_/g, ' ')}.</Text>
               <Text style={styles.hint}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</Text>
               <Text style={styles.hint}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</Text>
-              <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance stays locked until the backend confirms passed identity verification and enabled authenticator 2FA.'}</Text>
+              <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance stays locked until DFY Document Review is approved and authenticator 2FA is enabled.'}</Text>
               {identityVerificationStatus !== 'passed' && identityVerificationStatus !== 'pending' && (
                 <View style={{ marginTop: SPACING.sm, gap: 8 }}>
                   {!identityProviderConfigured ? (
