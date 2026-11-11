@@ -33,6 +33,7 @@ export default function ProfileScreen({ navigation }: any) {
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [marketingConsentSaving, setMarketingConsentSaving] = useState(false)
   const [identityVerificationStatus, setIdentityVerificationStatus] = useState('not_started')
+  const [identityLatestSubmission, setIdentityLatestSubmission] = useState<{ documentType: string; status: string; submittedAt: string; reviewReason?: string | null } | null>(null)
   const [identityProviderConfigured, setIdentityProviderConfigured] = useState(false)
   const [identityAttemptsRemaining, setIdentityAttemptsRemaining] = useState(0)
   const [identityConsentVersion, setIdentityConsentVersion] = useState('identity-verification-v1')
@@ -137,6 +138,7 @@ export default function ProfileScreen({ navigation }: any) {
           setIdentityProviderConfigured(!!status.configured)
           setIdentityAttemptsRemaining(Number(status.attemptsRemaining ?? 0))
           setIdentityConsentVersion(String(status.consentVersion || 'identity-verification-v1'))
+          setIdentityLatestSubmission(status.latestSubmission || null)
         }
       } catch {
         if (active) {
@@ -577,7 +579,7 @@ export default function ProfileScreen({ navigation }: any) {
           {(form.userType === 'runner' || form.userType === 'both') && (
             <View style={styles.eligibilityCard} accessibilityRole="summary">
               <Text style={styles.eligibilityTitle}>Runner eligibility</Text>
-              <Text style={styles.hint}>Identity check: {identityVerificationStatus.replace(/_/g, ' ')}.</Text>
+              <Text style={styles.hint}>DFY Document Review: {identityVerificationStatus === 'passed' ? 'DFY Identity Document Reviewed' : identityVerificationStatus === 'more_info_requested' ? 'more information required' : identityVerificationStatus === 'failed' ? 'review unsuccessful' : identityVerificationStatus.replace(/_/g, ' ')}.</Text>
               <Text style={styles.hint}>Authenticator 2FA: {authenticatorTwoFactorEnabled ? 'enabled' : 'not enabled'}.</Text>
               <Text style={styles.hint}>Payout account: {hasVerifiedPayoutAccount ? 'bank recipient verified' : 'not verified'}.</Text>
               <Text style={styles.hint}>{canAcceptTasks ? 'Runner task acceptance is enabled.' : 'Task acceptance stays locked until the backend confirms passed identity verification and enabled authenticator 2FA.'}</Text>
@@ -629,7 +631,14 @@ export default function ProfileScreen({ navigation }: any) {
                   )}
                 </View>
               )}
-              {identityVerificationStatus === 'pending' && <Text style={styles.hint}>Your identity documents are awaiting DFY administrator review. Please do not submit them again.</Text>}
+              {identityLatestSubmission && (
+                <View style={styles.eligibilityCard}>
+                  <Text style={styles.eligibilityTitle}>DFY Document Review update</Text>
+                  <Text style={styles.hint}>Submitted {new Date(identityLatestSubmission.submittedAt).toLocaleString('en-ZA')} · {identityLatestSubmission.status === 'more_info_requested' ? 'More information required' : identityLatestSubmission.status === 'rejected' ? 'Review unsuccessful' : identityLatestSubmission.status === 'approved' ? 'DFY Identity Document Reviewed' : 'Under review'}.</Text>
+                  {(identityLatestSubmission.status === 'more_info_requested' || identityLatestSubmission.status === 'rejected') && !!identityLatestSubmission.reviewReason && <Text style={styles.hint}>Administrator feedback: {identityLatestSubmission.reviewReason}</Text>}
+                </View>
+              )}
+              {identityVerificationStatus === 'pending' && <Text style={styles.hint}>Your documents are under review. DFY aims to complete the review within one business day. We will notify you when there is an update.</Text>}
               {identityVerificationStatus === 'manual_review' && (
                 <Text style={styles.hint}>Your verification requires review. Task acceptance remains locked; contact support for next steps.</Text>
               )}
