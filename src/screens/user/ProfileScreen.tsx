@@ -587,7 +587,7 @@ export default function ProfileScreen({ navigation }: any) {
                     <Text style={styles.hint}>DFY's secure document-submission service is not configured on this staging API yet.</Text>
                   ) : (
                     <>
-                      <Text style={styles.hint}>DFY stores your identity-document images encrypted and an authorised administrator reviews them manually. No selfie, liveness or automated facial recognition is used.</Text>
+                      <Text style={styles.hint}>DFY accepts a South African Smart ID card (front and back), green barcoded ID book (photo-information page) or passport (photo-information page). Your images are encrypted and reviewed manually. No selfie, liveness or automated facial recognition is used.</Text>
                       <TouchableOpacity
                         onPress={() => { void Linking.openURL(IDENTITY_PRIVACY_URL).catch(() => Alert.alert('Privacy notice', IDENTITY_PRIVACY_URL)) }}
                         accessibilityRole="link"
