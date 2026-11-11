@@ -48,6 +48,15 @@ jobs:
             exit 1
           fi
 
+      - name: Generate canonical OpenAPI declarations for CI artifact
+        run: npx --yes openapi-typescript@7.6.1 contracts/openapi.json -o /tmp/dfy-openapi.d.ts
+      - name: Upload generated OpenAPI declarations for contract sync
+        uses: actions/upload-artifact@v6
+        with:
+          name: dfy-openapi-generated
+          path: /tmp/dfy-openapi.d.ts
+          if-no-files-found: error
+
       - name: Verify generated OpenAPI declarations
         run: |
           npx --yes openapi-typescript@7.6.1 contracts/openapi.json -o /tmp/dfy-openapi.d.ts
