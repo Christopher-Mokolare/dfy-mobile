@@ -253,7 +253,7 @@ export default function ProfileScreen({ navigation }: any) {
       return
     }
     if (!identityProviderConfigured) {
-      setIdentitySessionError('Identity verification is not configured on this staging API yet.')
+      setIdentitySessionError('Identity verification is not configured for this service yet.')
       return
     }
     setIdentitySessionLoading(true)
