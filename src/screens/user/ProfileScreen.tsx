@@ -532,7 +532,7 @@ export default function ProfileScreen({ navigation }: any) {
           {(form.userType === 'runner' || form.userType === 'both') && (
             <View style={styles.eligibilityCard}>
               <Text style={styles.eligibilityTitle}>Runner identity onboarding</Text>
-              <Text style={styles.hint}>{hasIdNumber ? `An ID number is already on file ending ${idNumberLastFour}.` : 'Identity information will be collected through the dedicated verification flow once the provider and data protection controls are configured.'}</Text>
+              <Text style={styles.hint}>{hasIdNumber ? `An ID number is already on file ending ${idNumberLastFour}.` : 'Identity documents are submitted securely to DFY and reviewed manually by an authorised administrator.'}</Text>
               <Text style={styles.hint}>Do not send identity documents through this general profile form. A valid ID format is not identity verification.</Text>
             </View>
           )}
@@ -600,7 +600,7 @@ export default function ProfileScreen({ navigation }: any) {
                           value={identityConsentAccepted}
                           onValueChange={setIdentityConsentAccepted}
                           disabled={identitySessionLoading}
-                          accessibilityLabel="Consent to runner identity and liveness verification"
+                          accessibilityLabel="Consent to DFY identity-document review"
                         />
                         <Text style={[styles.hint, { flex: 1 }]}>
                           I consent to DFY securely processing my identity-document images for runner eligibility review, as described in the privacy notice.
