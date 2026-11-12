@@ -2792,6 +2792,7 @@ export interface paths {
                 query?: {
                     page?: number;
                     pageSize?: number;
+                    filter?: string;
                 };
                 header?: never;
                 path?: never;
