@@ -3101,6 +3101,14 @@
               "format": "int32",
               "default": 20
             }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "all"
+            }
           }
         ],
         "responses": {
