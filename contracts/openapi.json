@@ -2840,10 +2840,10 @@
         }
       }
     },
-    "/api/v1/identity-verification/status": {
+    "/api/v1/manual-identity-verification/status": {
       "get": {
         "tags": [
-          "IdentityVerification"
+          "ManualIdentityVerification"
         ],
         "responses": {
           "200": {
@@ -2869,26 +2869,26 @@
         }
       }
     },
-    "/api/v1/identity-verification/session": {
+    "/api/v1/manual-identity-verification/handoff": {
       "post": {
         "tags": [
-          "IdentityVerification"
+          "ManualIdentityVerification"
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StartIdentityVerificationRequest"
+                "$ref": "#/components/schemas/StartManualIdentityVerificationRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/StartIdentityVerificationRequest"
+                "$ref": "#/components/schemas/StartManualIdentityVerificationRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/StartIdentityVerificationRequest"
+                "$ref": "#/components/schemas/StartManualIdentityVerificationRequest"
               }
             }
           }
@@ -2917,26 +2917,55 @@
         }
       }
     },
-    "/api/v1/identity-verification/exchange": {
+    "/api/v1/manual-identity-verification/submission/handoff": {
       "post": {
         "tags": [
-          "IdentityVerification"
+          "ManualIdentityVerification"
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ExchangeIdentityVerificationRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExchangeIdentityVerificationRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExchangeIdentityVerificationRequest"
+                "required": [
+                  "DocumentType",
+                  "FrontDocument",
+                  "HandoffCode"
+                ],
+                "type": "object",
+                "properties": {
+                  "HandoffCode": {
+                    "maxLength": 200,
+                    "minLength": 20,
+                    "type": "string"
+                  },
+                  "DocumentType": {
+                    "maxLength": 32,
+                    "minLength": 0,
+                    "type": "string"
+                  },
+                  "FrontDocument": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "BackDocument": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "HandoffCode": {
+                  "style": "form"
+                },
+                "DocumentType": {
+                  "style": "form"
+                },
+                "FrontDocument": {
+                  "style": "form"
+                },
+                "BackDocument": {
+                  "style": "form"
+                }
               }
             }
           }
@@ -2965,10 +2994,114 @@
         }
       }
     },
-    "/api/v1/identity-verification/refresh": {
+    "/api/v1/manual-identity-verification/submission": {
       "post": {
         "tags": [
-          "IdentityVerification"
+          "ManualIdentityVerification"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "required": [
+                  "ConsentAccepted",
+                  "ConsentVersion",
+                  "DocumentType",
+                  "FrontDocument"
+                ],
+                "type": "object",
+                "properties": {
+                  "ConsentAccepted": {
+                    "type": "boolean"
+                  },
+                  "ConsentVersion": {
+                    "maxLength": 40,
+                    "minLength": 0,
+                    "type": "string"
+                  },
+                  "DocumentType": {
+                    "maxLength": 32,
+                    "minLength": 0,
+                    "type": "string"
+                  },
+                  "FrontDocument": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "BackDocument": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "ConsentAccepted": {
+                  "style": "form"
+                },
+                "ConsentVersion": {
+                  "style": "form"
+                },
+                "DocumentType": {
+                  "style": "form"
+                },
+                "FrontDocument": {
+                  "style": "form"
+                },
+                "BackDocument": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/manual-identity-verification/admin/pending": {
+      "get": {
+        "tags": [
+          "ManualIdentityVerification"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -2994,14 +3127,210 @@
         }
       }
     },
-    "/api/v1/identity-verification/sumsub/webhook": {
+    "/api/v1/manual-identity-verification/admin/{id}/claim": {
       "post": {
         "tags": [
-          "IdentityVerification"
+          "ManualIdentityVerification"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ManualIdentityVerification"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/manual-identity-verification/admin/{id}/heartbeat": {
+      "post": {
+        "tags": [
+          "ManualIdentityVerification"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/manual-identity-verification/admin/{id}/document/{side}": {
+      "get": {
+        "tags": [
+          "ManualIdentityVerification"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "side",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/manual-identity-verification/admin/{id}/decision": {
+      "post": {
+        "tags": [
+          "ManualIdentityVerification"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualIdentityVerificationDecisionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualIdentityVerificationDecisionRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualIdentityVerificationDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectApiResponse"
+                }
+              }
+            }
           }
         }
       }
@@ -7140,20 +7469,6 @@
         },
         "additionalProperties": false
       },
-      "ExchangeIdentityVerificationRequest": {
-        "required": [
-          "handoffCode"
-        ],
-        "type": "object",
-        "properties": {
-          "handoffCode": {
-            "maxLength": 200,
-            "minLength": 20,
-            "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
       "ForgotPasswordRequest": {
         "required": [
           "email"
@@ -7328,6 +7643,49 @@
           },
           "secondFactorCode": {
             "maxLength": 20,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ManualIdentityVerificationDecisionRequest": {
+        "required": [
+          "decision"
+        ],
+        "type": "object",
+        "properties": {
+          "decision": {
+            "maxLength": 32,
+            "minLength": 0,
+            "type": "string"
+          },
+          "verifiedDateOfBirth": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reasonCode": {
+            "maxLength": 40,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "runnerNote": {
+            "maxLength": 850,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "southAfricanIdNumber": {
+            "maxLength": 13,
+            "minLength": 13,
+            "type": "string",
+            "nullable": true
+          },
+          "internalNote": {
+            "maxLength": 1000,
             "minLength": 0,
             "type": "string",
             "nullable": true
@@ -7602,7 +7960,7 @@
         },
         "additionalProperties": false
       },
-      "StartIdentityVerificationRequest": {
+      "StartManualIdentityVerificationRequest": {
         "required": [
           "consentAccepted",
           "consentVersion"
