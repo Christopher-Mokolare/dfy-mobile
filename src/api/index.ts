@@ -109,6 +109,12 @@ export const disputesApi = {
   getMy: () => api.get('/disputes/my'),
 }
 
+export const incidentsApi = {
+  report: (taskId: string, data: { category: string; description: string; evidenceMessageIds?: number[] }) =>
+    api.post(`/tasks/${encodeURIComponent(taskId)}/incidents`, data),
+  getMy: () => api.get('/incidents/my'),
+}
+
 export const ratingsApi = {
   submit: (taskId: string, ratingValue: number, review?: string) => api.post('/ratings', { taskId, ratingValue, review }),
   getForUser: (userId: number, page = 1, pageSize = 5) => api.get(`/ratings/user/${userId}?page=${page}&pageSize=${pageSize}`),

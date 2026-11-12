@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 import { View, Text, FlatList, RefreshControl, StyleSheet, Alert } from 'react-native'
 import { useFocusEffect } from '@react-navigation/native'
-import { tasksApi, ratingsApi, disputesApi } from '../../api'
+import { tasksApi, ratingsApi } from '../../api'
 import { EmptyState, LoadingScreen } from '../../components/Common'
 import StatusBadge from '../../components/StatusBadge'
 import AppModal from '../../components/AppModal'

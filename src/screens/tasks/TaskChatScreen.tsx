@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
-  AppState, View, Text, FlatList, TextInput, TouchableOpacity,
+  AppState, View, Text, FlatList, TextInput, TouchableOpacity, Modal, Alert,
   StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator
 } from 'react-native'
 import * as signalR from '@microsoft/signalr'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { tasksApi } from '../../api'
+import { incidentsApi, tasksApi } from '../../api'
 import { useAuth } from '../../context/AuthContext'
 import { useNotifications } from '../../context/NotificationContext'
 import { COLORS, RADIUS, SPACING, SHADOW } from '../../config/theme'
@@ -40,6 +40,12 @@ export default function TaskChatScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [connected, setConnected] = useState(false)
+  const [incidentOpen, setIncidentOpen] = useState(false)
+  const [incidentCategory, setIncidentCategory] = useState('Scope change')
+  const [incidentDescription, setIncidentDescription] = useState('')
+  const [incidentSubmitting, setIncidentSubmitting] = useState(false)
+  const [selectedEvidenceIds, setSelectedEvidenceIds] = useState<number[]>([])
+  const [taskInfo, setTaskInfo] = useState<any>(null)
 
   const hubRef = useRef<signalR.HubConnection | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -70,6 +76,13 @@ export default function TaskChatScreen({ route, navigation }: any) {
     } catch {}
     finally { setLoading(false) }
   }, [taskId, mergeMessages])
+
+  useEffect(() => {
+    if (!taskId) return
+    tasksApi.getById(String(taskId))
+      .then(res => { if (res.data?.success) setTaskInfo(res.data.data) })
+      .catch(() => {})
+  }, [taskId])
 
   useEffect(() => {
     if (!taskId) return
@@ -163,6 +176,27 @@ export default function TaskChatScreen({ route, navigation }: any) {
     } finally { setSending(false) }
   }
 
+  const handleReportIncident = async () => {
+    if (!taskId || incidentSubmitting || incidentDescription.trim().length < 20) return
+    setIncidentSubmitting(true)
+    try {
+      const res = await incidentsApi.report(String(taskId), {
+        category: incidentCategory,
+        description: incidentDescription.trim(),
+        evidenceMessageIds: selectedEvidenceIds,
+      })
+      if (res.data?.success === false) throw new Error(res.data.message || 'Unable to submit report')
+      setIncidentDescription('')
+      setSelectedEvidenceIds([])
+      setIncidentOpen(false)
+      Alert.alert('Report submitted', 'Your report has been sent to DoForYou support. Reporting an incident does not automatically change escrow or payout status.')
+    } catch (error: any) {
+      Alert.alert('Unable to submit', error?.response?.data?.message || error?.message || 'Please try again.')
+    } finally {
+      setIncidentSubmitting(false)
+    }
+  }
+
   const renderMessage = ({ item: msg }: { item: ChatMessage }) => (
     <View style={[styles.msgRow, msg.isCurrentUser ? styles.msgRowMine : styles.msgRowTheirs]}>
       {!msg.isCurrentUser && (
@@ -174,6 +208,16 @@ export default function TaskChatScreen({ route, navigation }: any) {
           <Text style={[styles.msgText, msg.isCurrentUser && styles.msgTextMine]}>{msg.content}</Text>
           <Text style={[styles.msgTime, msg.isCurrentUser && styles.msgTimeMine]}>{formatTime(msg.timestamp)}</Text>
         </View>
+        {Number.isInteger(Number(msg.id)) && Number(msg.id) > 0 && (
+          <TouchableOpacity
+            onPress={() => setSelectedEvidenceIds(ids => ids.includes(Number(msg.id)) ? ids.filter(id => id !== Number(msg.id)) : ids.length < 10 ? [...ids, Number(msg.id)] : ids)}
+            style={styles.evidenceToggle}
+          >
+            <Text style={[styles.evidenceToggleText, selectedEvidenceIds.includes(Number(msg.id)) && styles.evidenceToggleSelected]}>
+              {selectedEvidenceIds.includes(Number(msg.id)) ? '✓ Evidence attached' : '＋ Attach evidence'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
       {msg.isCurrentUser && (
         <View style={[styles.avatar, styles.avatarMine]}><Text style={styles.avatarText}>{getInitials(msg.senderName)}</Text></View>
@@ -186,6 +230,10 @@ export default function TaskChatScreen({ route, navigation }: any) {
       <View style={styles.statusBar}>
         <View style={[styles.statusDot, { backgroundColor: connected ? COLORS.success : COLORS.warning }]} />
         <Text style={styles.statusText}>{connected ? 'Live' : 'Polling'}</Text>
+        <View style={{ flex: 1 }} />
+        {taskInfo?.canReportIncident && <TouchableOpacity onPress={() => setIncidentOpen(true)} style={styles.reportButton}>
+          <Text style={styles.reportButtonText}>⚑ Report issue</Text>
+        </TouchableOpacity>}
       </View>
 
       {loading ? (
@@ -209,6 +257,42 @@ export default function TaskChatScreen({ route, navigation }: any) {
           onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
         />
       )}
+
+      <Modal visible={incidentOpen} transparent animationType="slide" onRequestClose={() => setIncidentOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.incidentModal}>
+            <Text style={styles.incidentTitle}>Report a task incident</Text>
+            <Text style={styles.incidentHelp}>Use Chat Hub for routine coordination. Send this report to DFY if you need support.</Text>
+            <Text style={styles.incidentLabel}>Category</Text>
+            <View style={styles.categoryList}>
+              {['Scope change','Task information','Access or location','Creator unresponsive','Safety concern','Threats or harassment','Cancellation or lost costs','Other'].map(category => (
+                <TouchableOpacity key={category} onPress={() => setIncidentCategory(category)} style={[styles.categoryChip, incidentCategory === category && styles.categoryChipActive]}>
+                  <Text style={[styles.categoryText, incidentCategory === category && styles.categoryTextActive]}>{category}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.incidentLabel}>What happened? (20–2,000 characters)</Text>
+            <TextInput
+              style={styles.incidentInput}
+              value={incidentDescription}
+              onChangeText={setIncidentDescription}
+              placeholder="Describe what happened, when, and what help you need."
+              multiline
+              maxLength={2000}
+              textAlignVertical="top"
+            />
+            <Text style={styles.incidentNotice}>Submitting an incident does not automatically freeze escrow or stop a payout. {selectedEvidenceIds.length} chat message(s) attached.</Text>
+            <View style={styles.incidentActions}>
+              <TouchableOpacity onPress={() => setIncidentOpen(false)} disabled={incidentSubmitting} style={styles.cancelIncidentButton}>
+                <Text style={styles.cancelIncidentText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleReportIncident} disabled={incidentSubmitting || incidentDescription.trim().length < 20} style={[styles.submitIncidentButton, (incidentSubmitting || incidentDescription.trim().length < 20) && styles.disabledIncidentButton]}>
+                {incidentSubmitting ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.submitIncidentText}>Send report</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.inputBar}>
         <TextInput
@@ -235,6 +319,31 @@ export default function TaskChatScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  reportButton: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#FEE2E2' },
+  evidenceToggle: { alignSelf: 'flex-end', paddingHorizontal: 5, paddingVertical: 3 },
+  evidenceToggleText: { color: COLORS.textMuted, fontSize: 10 },
+  evidenceToggleSelected: { color: COLORS.primary, fontWeight: '700' },
+
+  reportButtonText: { color: '#991B1B', fontSize: 12, fontWeight: '700' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.6)', justifyContent: 'center', padding: 18 },
+  incidentModal: { backgroundColor: COLORS.surface, borderRadius: 18, padding: 18, gap: 10, maxHeight: '90%' },
+  incidentTitle: { color: COLORS.textPrimary, fontSize: 19, fontWeight: '700' },
+  incidentHelp: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 19 },
+  incidentLabel: { color: COLORS.textPrimary, fontSize: 13, fontWeight: '700', marginTop: 4 },
+  categoryList: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  categoryChip: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 7 },
+  categoryChipActive: { borderColor: COLORS.primary, backgroundColor: '#EEF2FF' },
+  categoryText: { color: COLORS.textSecondary, fontSize: 11 },
+  categoryTextActive: { color: COLORS.primary, fontWeight: '700' },
+  incidentInput: { borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, minHeight: 110, maxHeight: 180, padding: 11, color: COLORS.textPrimary, fontSize: 14 },
+  incidentNotice: { backgroundColor: COLORS.background, color: COLORS.textSecondary, fontSize: 11, padding: 9, borderRadius: 8, lineHeight: 16 },
+  incidentActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 9, marginTop: 4 },
+  cancelIncidentButton: { paddingHorizontal: 14, paddingVertical: 11, borderRadius: 9, backgroundColor: COLORS.background },
+  cancelIncidentText: { color: COLORS.textSecondary, fontWeight: '600' },
+  submitIncidentButton: { paddingHorizontal: 14, paddingVertical: 11, borderRadius: 9, backgroundColor: COLORS.primary, minWidth: 105, alignItems: 'center' },
+  disabledIncidentButton: { opacity: 0.45 },
+  submitIncidentText: { color: COLORS.white, fontWeight: '700' },
+
   statusBar: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 8, paddingHorizontal: 16, backgroundColor: COLORS.surface, borderBottomWidth: 1, borderBottomColor: COLORS.border },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   statusText: { fontSize: 12, color: COLORS.textSecondary },
